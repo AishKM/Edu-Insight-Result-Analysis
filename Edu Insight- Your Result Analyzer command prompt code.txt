@@ -1,0 +1,560 @@
+pip install flask
+pip install pandas matplotlib
+
+
+command prompt
+
+python -m venv venv
+
+.\venv\Scripts\activate.bat
+
+cd "C:\Users\Aishu\Desktop\Coding\mini projects 5th sem\Edu Insight- Your Result Analyzer"
+
+pip install flask
+pip install pandas
+pip install matplotlib
+pip install seaborn
+pip install fpdf
+
+vscode 
+
+python app.py
+
+In Windows (Command Prompt):   //optional
+set FLASK_APP=app.py
+
+In Windows (PowerShell):   //optional
+$env:FLASK_APP = "app.py"
+
+flask run
+
+
+
+
+
+
+########
+########
+########
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# List of semester files and corresponding sheet names
+semester_files = {
+    'Semester 1': 'sem1_student_results.xlsx',
+    'Semester 2': 'sem2_student_results.xlsx',
+    'Semester 3': 'sem3_student_results.xlsx',
+    'Semester 4': 'sem4_student_results.xlsx'
+}
+
+# Initialize dictionaries to hold data from each semester
+marks_data_all = {}
+subject_data_all = {}
+
+# Function for calculating result class
+def calculate_result_class(row, semester):
+    if semester in ['Semester 1', 'Semester 2']:
+        if row['Total marks'] >= 640: return 'Distinction'
+        elif row['Total marks'] >= 480: return 'First Class'
+        elif row['Total marks'] >= 320: return 'Second Class'
+        elif row['Total marks'] >= 224: return 'Pass'
+        else: return 'Fail'
+    elif semester in ['Semester 3', 'Semester 4']:
+        if row['Total marks'] >= 720: return 'Distinction'
+        elif row['Total marks'] >= 540: return 'First Class'
+        elif row['Total marks'] >= 360: return 'Second Class'
+        elif row['Total marks'] >= 252: return 'Pass'
+        else: return 'Fail'
+
+# Loop through each semester file and load the sheets
+for semester, file in semester_files.items():
+    marks_data_all[semester] = pd.read_excel(file, sheet_name='Student Marks')
+    subject_data_all[semester] = pd.read_excel(file, sheet_name='Subject Details')
+
+    # Convert subject columns to numeric and fill missing values with 0
+    marks_data_all[semester].iloc[:, 2:-2] = marks_data_all[semester].iloc[:, 2:-2].apply(pd.to_numeric, errors='coerce')
+    marks_data_all[semester].iloc[:, 2:-2].fillna(0, inplace=True)
+
+    # Calculate Total Marks
+    marks_data_all[semester]['Total marks'] = marks_data_all[semester].iloc[:, 2:-2].sum(axis=1)
+
+    # Calculate Result Class
+    marks_data_all[semester]['Result Class'] = marks_data_all[semester].apply(lambda row: calculate_result_class(row, semester), axis=1)
+
+# Visualization: Grade Distribution and Total Marks Distribution
+for semester, data in marks_data_all.items():
+    # Grade Distribution
+    plt.figure(figsize=(8, 6))
+    sns.countplot(x=data['Result Class'], palette='Set2')
+    plt.title(f'Grade Distribution - {semester}')
+    plt.xlabel('Grade')
+    plt.ylabel('Number of Students')
+    plt.show()
+
+    # Total Marks Distribution
+    plt.figure(figsize=(8, 6))
+    sns.histplot(data['Total marks'], kde=True, color='blue')
+    plt.title(f'Total Marks Distribution - {semester}')
+    plt.xlabel('Total Marks')
+    plt.ylabel('Frequency')
+    plt.show()
+
+    # Pass/Fail Percentage
+    pass_count = (data['Result Class'] != 'Fail').sum()
+    total_count = len(data)
+    pass_percentage = (pass_count / total_count) * 100
+    fail_percentage = 100 - pass_percentage
+    plt.figure(figsize=(8, 6))
+    plt.bar(['Pass', 'Fail'], [pass_percentage, fail_percentage], color=['green', 'red'])
+    plt.title(f'Pass and Fail Percentage - {semester}')
+    plt.xlabel('Result')
+    plt.ylabel('Percentage')
+    plt.ylim(0, 100)
+    plt.show()
+
+# Subject-wise Average Marks (Example: Semester 1)
+subject_columns = marks_data_all['Semester 1'].columns[2:-2]  # Adjust according to your actual columns
+subject_avg_1 = marks_data_all['Semester 1'][subject_columns].mean()
+plt.figure(figsize=(10, 6))
+subject_avg_1.plot(kind='barh', color='skyblue')
+plt.title('Average Marks by Subject - Semester 1')
+plt.xlabel('Average Marks')
+plt.ylabel('Subject')
+plt.show()
+
+#display specific student marks of any sem 
+def display_student_info(semester, usn):
+    """
+    Display details of a specific student for a given semester.
+    :param semester: The semester name (e.g., 'Semester 1')
+    :param usn: The unique student number (USN) of the student
+    """
+    if semester not in marks_data_all:
+        print(f"Semester {semester} data not found.")
+        return
+
+    data = marks_data_all[semester]
+
+    # Check if the student exists
+    student_row = data[data['USN'] == usn]
+    if student_row.empty:
+        print(f"Student with USN {usn} not found in {semester}.")
+        return
+
+    # Display student information
+    print(f"Details for {semester} - USN: {usn}")
+    print("=============================================")
+    print(f"Student Name: {student_row['Student Name'].values[0]}")
+    for subject in data.columns[2:-2]:  # Adjust column slicing as per your dataset
+        print(f"{subject}: {student_row[subject].values[0]}")
+    print(f"Total Marks: {student_row['Total marks'].values[0]}")
+    print(f"Result Class: {student_row['Result Class'].values[0]}")
+
+    # Calculate pass percentage
+    total_subjects = len(data.columns[2:-2])
+    passed_subjects = (student_row[data.columns[2:-2]] > 35).sum(axis=1).values[0]
+   # pass_percentage = (passed_subjects / total_subjects) * 100
+   # print(f"Pass Percentage: {pass_percentage:.2f}%")
+
+while True:
+    semester = input("Enter the semester (e.g., 'Semester 1'): ")
+    usn = input("Enter the student's USN: ")
+    display_student_info(semester, usn)
+    cont = input("Do you want to view another student? (yes/no): ").lower()
+    if cont != 'yes':
+        break
+#performance of perticular student of particular sem
+import matplotlib.pyplot as plt
+
+def display_student_info_and_visualize(semester, usn):
+    """
+    Display and visualize details of a specific student for a given semester.
+    :param semester: The semester name (e.g., 'Semester 1')
+    :param usn: The unique student number (USN) of the student
+    """
+    if semester not in marks_data_all:
+        print(f"Semester {semester} data not found.")
+        return
+
+    data = marks_data_all[semester]
+
+    # Check if the student exists
+    student_row = data[data['USN'] == usn]
+    if student_row.empty:
+        print(f"Student with USN {usn} not found in {semester}.")
+        return
+
+    # Display student information
+    print(f"Details for {semester} - USN: {usn}")
+    print("=============================================")
+    print(f"Student Name: {student_row['Student Name'].values[0]}")
+    subject_marks = {}
+    for subject in data.columns[2:-2]:  # Adjust column slicing as per your dataset
+        subject_marks[subject] = student_row[subject].values[0]
+        print(f"{subject}: {subject_marks[subject]}")
+    print(f"Total Marks: {student_row['Total marks'].values[0]}")
+    print(f"Result Class: {student_row['Result Class'].values[0]}")
+
+    # Calculate pass percentage
+    total_subjects = len(data.columns[2:-2])
+    passed_subjects = (student_row[data.columns[2:-2]] > 35).sum(axis=1).values[0]
+    pass_percentage = (passed_subjects / total_subjects) * 100
+    print(f"Pass Percentage: {pass_percentage:.2f}%")
+
+    # Visualization: Marks per subject
+    plt.figure(figsize=(10, 6))
+    plt.bar(subject_marks.keys(), subject_marks.values(), color='skyblue')
+    plt.title(f"{student_row['Student Name'].values[0]} - Subject Performance")
+    plt.xlabel('Subjects')
+    plt.ylabel('Marks')
+    plt.ylim(0, 100)  # Assuming marks range from 0 to 100
+    plt.xticks(rotation=45)
+    plt.show()
+
+    # Visualization: Pass/Fail Distribution
+    plt.figure(figsize=(8, 6))
+    labels = ['Passed Subjects', 'Failed Subjects']
+    sizes = [passed_subjects, total_subjects - passed_subjects]
+    colors = ['green', 'red']
+    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=colors)
+    plt.title(f"{student_row['Student Name'].values[0]} - Pass/Fail Distribution")
+    plt.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+    plt.show()
+
+semester = input("Enter the semester (e.g., 'Semester 1'): ")
+usn = input("Enter the student's USN: ")
+display_student_info_and_visualize(semester, usn)
+
+########
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+def visualize_student_performance(usn):
+    """
+    Visualize a student's performance across all semesters and overall.
+    :param usn: The unique student number (USN) of the student.
+    """
+    # Initialize structures to hold aggregated data
+    semester_performance = {}
+    all_subjects = set()
+    total_marks_across_sems = []
+    pass_fail_distribution = {'Passed': 0, 'Failed': 0}
+
+    for semester, data in marks_data_all.items():
+        # Filter data for the given USN
+        student_row = data[data['USN'] == usn]
+
+        if student_row.empty:
+            print(f"Student with USN {usn} not found in {semester}.")
+            continue
+
+        # Collect all unique subject names
+        subjects = data.columns[2:-2].tolist()
+        all_subjects.update(subjects)
+
+        # Collect semester-specific data
+        semester_performance[semester] = {
+            'Total Marks': student_row['Total marks'].values[0],
+            'Result Class': student_row['Result Class'].values[0],
+            'Subject Marks': dict(zip(subjects, student_row.iloc[:, 2:-2].values.flatten())),
+        }
+
+        # Update overall performance data
+        total_marks_across_sems.append(student_row['Total marks'].values[0])
+        pass_fail_distribution['Passed'] += (student_row.iloc[:, 2:-2] > 35).sum(axis=1).values[0]
+        pass_fail_distribution['Failed'] += (student_row.iloc[:, 2:-2] <= 35).sum(axis=1).values[0]
+
+    # If no data is found for the USN
+    if not semester_performance:
+        print(f"No data found for USN: {usn} in any semester.")
+        return
+
+    # Convert all_subjects to a sorted list for consistent ordering
+    all_subjects = sorted(all_subjects)
+
+    # Prepare data for visualization
+    subject_marks_by_semester = {subject: [] for subject in all_subjects}
+    for semester, performance in semester_performance.items():
+        for subject in all_subjects:
+            subject_marks_by_semester[subject].append(performance['Subject Marks'].get(subject, 0))
+
+    # Visualize Marks Across Semesters
+    plt.figure(figsize=(10, 6))
+    for semester, performance in semester_performance.items():
+        plt.bar(semester, performance['Total Marks'], label=semester)
+    plt.title(f'Total Marks Across Semesters - USN: {usn}')
+    plt.ylabel('Total Marks')
+    plt.xlabel('Semesters')
+    plt.legend()
+    plt.show()
+
+    # Visualize Subject-Wise Performance Across Semesters
+    bar_width = 0.2
+    x_indices = np.arange(len(all_subjects))
+    plt.figure(figsize=(12, 8))
+    for i, semester in enumerate(semester_performance.keys()):
+        marks = [subject_marks_by_semester[subject][i] if i < len(subject_marks_by_semester[subject]) else 0 for subject in all_subjects]
+        plt.bar(x_indices + i * bar_width, marks, width=bar_width, label=semester)
+    plt.title(f'Subject-wise Performance Across Semesters - USN: {usn}')
+    plt.ylabel('Marks')
+    plt.xticks(x_indices + bar_width / 2, all_subjects, rotation=45)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    # Visualize Overall Pass/Fail Distribution
+    plt.figure(figsize=(8, 6))
+    labels = ['Passed Subjects', 'Failed Subjects']
+    sizes = [pass_fail_distribution['Passed'], pass_fail_distribution['Failed']]
+    colors = ['green', 'red']
+    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=colors)
+    plt.title(f'Overall Pass/Fail Distribution - USN: {usn}')
+    plt.axis('equal')  # Equal aspect ratio ensures the pie chart is circular.
+    plt.show()
+
+    # Print Overall Summary
+    print(f"Overall Performance Summary for USN: {usn}")
+    print("===============================================")
+    print(f"Total Marks Across Semesters: {sum(total_marks_across_sems)}")
+    print(f"Average Marks Across Semesters: {sum(total_marks_across_sems) / len(total_marks_across_sems):.2f}")
+    print(f"Overall Pass Percentage: {100 * pass_fail_distribution['Passed'] / (pass_fail_distribution['Passed'] + pass_fail_distribution['Failed']):.2f}%")
+
+usn = input("Enter the student's USN: ")
+visualize_student_performance(usn)
+
+
+# Define a function to calculate pass/fail for each subject
+def subject_pass_fail(row, subject, pass_threshold=35):
+    # Assume that 'pass_threshold' is 35% of the maximum marks for each subject
+    max_marks = 100  # Replace with the actual maximum marks for each subject, if needed
+    if row[subject] >= (max_marks * pass_threshold / 100):
+        return 'Pass'
+    else:
+        return 'Fail'
+
+# Iterate through each semester and calculate pass/fail percentages for each subject
+for semester, data in marks_data_all.items():
+    subject_columns = data.columns[2:-2]  # Adjust based on your actual subject columns
+    
+    for subject in subject_columns:
+        # Apply the pass/fail function for the subject
+        data[subject + ' Pass/Fail'] = data.apply(lambda row: subject_pass_fail(row, subject), axis=1)
+
+        # Calculate pass and fail counts
+        pass_count = data[data[subject + ' Pass/Fail'] == 'Pass'].shape[0]
+        fail_count = data[data[subject + ' Pass/Fail'] == 'Fail'].shape[0]
+
+        # Total number of students
+        total_count = data.shape[0]
+
+        # Calculate percentages
+        pass_percentage = (pass_count / total_count) * 100
+        fail_percentage = (fail_count / total_count) * 100
+
+        # Print results for the subject
+        print(f"{semester} - {subject}:")
+        print(f"Pass Count: {pass_count} | Fail Count: {fail_count}")
+        print(f"Pass Percentage: {pass_percentage:.2f}% | Fail Percentage: {fail_percentage:.2f}% | \n")
+
+!pip install fpdf pandas matplotlib seaborn
+from fpdf import FPDF
+import pandas as pd
+
+# Initialize PDF class
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, 'Result Analysis Report', border=False, ln=True, align='C')
+        self.ln(10)
+
+    def add_title(self, title):
+        self.set_font('Arial', 'B', 14)
+        self.cell(0, 10, title, border=False, ln=True, align='C')
+        self.ln(10)
+
+    def add_table(self, data, col_widths, col_headers):
+        self.set_font('Arial', 'B', 10)
+        for i, header in enumerate(col_headers):
+            self.cell(col_widths[i], 10, header, border=1, align='C')
+        self.ln()
+
+        self.set_font('Arial', '', 10)
+        for row in data:
+            for i, item in enumerate(row):
+                self.cell(col_widths[i], 10, str(item), border=1, align='C')
+            self.ln()
+
+# Initialize dictionaries for data
+semester_files = {
+    'Semester 1': 'sem1_student_results.xlsx',
+    'Semester 2': 'sem2_student_results.xlsx',
+    'Semester 3': 'sem3_student_results.xlsx',
+    'Semester 4': 'sem4_student_results.xlsx'
+}
+marks_data_all = {}
+subject_data_all = {}
+
+def subject_pass_fail(row, subject, pass_threshold=35):
+    max_marks = 100
+    return 'Pass' if row[subject] >= (max_marks * pass_threshold / 100) else 'Fail'
+
+# Load data
+for semester, file in semester_files.items():
+    marks_data = pd.read_excel(file, sheet_name='Student Marks')
+    subject_data = pd.read_excel(file, sheet_name='Subject Details')
+
+    marks_data.iloc[:, 2:] = marks_data.iloc[:, 2:].apply(pd.to_numeric, errors='coerce').fillna(0)
+
+    for subject in marks_data.columns[2:]:
+        marks_data[subject + ' Pass/Fail'] = marks_data.apply(lambda row: subject_pass_fail(row, subject), axis=1)
+
+    marks_data_all[semester] = marks_data
+    subject_data_all[semester] = subject_data
+
+# Create PDF
+pdf = PDF()
+pdf.add_page()
+
+# Cover Page
+pdf.set_font('Arial', 'B', 20)
+pdf.cell(0, 10, 'Edu-Insight: Result Analyzer', ln=True, align='C')
+pdf.ln(20)
+pdf.set_font('Arial', '', 12)
+pdf.multi_cell(0, 10, "This report provides a comprehensive analysis of student performance across all semesters. Each section includes subject-wise performance and the list of top performers and slow learners.")
+pdf.ln(10)
+
+# Semester Analysis Pages
+for semester, marks_data in marks_data_all.items():
+    subject_data = subject_data_all[semester]
+    subject_columns = marks_data.columns[2:]
+    table_data = []
+
+    # Ensure valid subjects (to avoid extra 'N/A' rows)
+    for i, subject in enumerate(subject_columns, 1):
+        pass_fail_col = subject + ' Pass/Fail'
+
+        if pass_fail_col not in marks_data.columns:
+            print(f"Warning: {pass_fail_col} not found in {semester}")
+            continue
+
+        pass_count = marks_data[marks_data[pass_fail_col] == 'Pass'].shape[0]
+        fail_count = marks_data[marks_data[pass_fail_col] == 'Fail'].shape[0]
+        total = pass_count + fail_count
+        pass_percentage = (pass_count / total) * 100 if total > 0 else 0
+        fail_percentage = (fail_count / total) * 100 if total > 0 else 0
+
+        # Ensure no 'N/A' values
+        subject_code = subject_data.iloc[i - 1]['Subject Code'] if i - 1 < len(subject_data) else None
+        subject_name = subject_data.iloc[i - 1]['Subject Name'] if i - 1 < len(subject_data) else None
+
+        # Only append if valid subject details are found
+        if subject_code and subject_name:
+            table_data.append([i, subject_code, subject_name, f"{pass_percentage:.2f}%", f"{fail_percentage:.2f}%"])
+
+    pdf.add_page()
+    pdf.add_title(f"{semester} Analysis")
+    col_widths = [15, 30, 70, 35, 35]
+    col_headers = ['Sl No.', 'Subject Code', 'Subject Name', 'Pass %', 'Fail %']
+    pdf.add_table(table_data, col_widths, col_headers)
+
+# Add Top Performers and Slow Learners Pages
+slow_learners = []
+fast_learners = []
+
+for semester, marks_data in marks_data_all.items():
+    if 'Total marks' not in marks_data.columns or 'Name' not in marks_data.columns:
+        print(f"Warning: Missing required columns in {semester}")
+        continue
+
+    slow_learners.extend(marks_data.nsmallest(20, 'Total marks')[['USN', 'Name', 'Total marks']].values.tolist())
+    fast_learners.extend(marks_data.nlargest(10, 'Total marks')[['USN', 'Name', 'Total marks']].values.tolist())
+
+pdf.add_page()
+pdf.add_title("Top 20 Slow Learners")
+slow_learners_data = [[i + 1] + learner for i, learner in enumerate(slow_learners)]
+pdf.add_table(slow_learners_data, [15, 50, 50, 35], ['Sl No.', 'USN', 'Name', 'Marks'])
+
+pdf.add_page()
+pdf.add_title("Top 10 Fast Learners")
+fast_learners_data = [[i + 1] + learner for i, learner in enumerate(fast_learners)]
+pdf.add_table(fast_learners_data, [15, 50, 50, 35], ['Sl No.', 'USN', 'Name', 'Marks'])
+
+# Save PDF
+pdf.output('Result_Analysis_Report.pdf')
+print("PDF report generated as 'Result_Analysis_Report.pdf'")
+
+#analysis pdf for visualization
+from fpdf import FPDF
+import os
+
+class PDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 12)
+        self.cell(0, 10, 'Edu-Insight: Result Analysis Report', align='C', ln=1, border=0)
+        self.ln(10)
+
+    def add_title(self, title):
+        self.set_font('Arial', 'B', 14)
+        self.cell(0, 10, title, ln=1, align='C')
+        self.ln(10)
+
+    def add_paragraph(self, text):
+        self.set_font('Arial', '', 12)
+        self.multi_cell(0, 10, text)
+        self.ln(5)
+
+    def add_image(self, img_path, x=10, y=None, w=190):
+        self.image(img_path, x=x, y=y, w=w)
+        self.ln(10)
+
+# Initialize the PDF object
+pdf = PDF()
+pdf.set_auto_page_break(auto=True, margin=15)
+
+# Cover Page
+pdf.add_page()
+pdf.add_title("Edu-Insight: Result Analysis")
+pdf.add_paragraph("This report provides a detailed analysis of student marks across four semesters, "
+                  "including subject-wise and overall performance metrics.")
+
+# Add Semester-wise Analysis
+for semester, data in marks_data_all.items():
+    # Add a page for each semester
+    pdf.add_page()
+    pdf.add_title(f"{semester} Analysis")
+
+    # Grade Distribution Chart
+    grade_chart_path = f'{semester}_grade_distribution.png'
+    plt.figure(figsize=(8, 6))
+    sns.countplot(x=data['Result Class'], palette='Set2')
+    plt.title(f'Grade Distribution - {semester}')
+    plt.xlabel('Grade')
+    plt.ylabel('Number of Students')
+    plt.savefig(grade_chart_path)
+    plt.close()
+
+    pdf.add_image(grade_chart_path)
+
+    # Total Marks Distribution Chart
+    marks_chart_path = f'{semester}_marks_distribution.png'
+    plt.figure(figsize=(8, 6))
+    sns.histplot(data['Total marks'], kde=True, color='blue')
+    plt.title(f'Total Marks Distribution - {semester}')
+    plt.xlabel('Total Marks')
+    plt.ylabel('Frequency')
+    plt.savefig(marks_chart_path)
+    plt.close()
+
+    pdf.add_image(marks_chart_path)
+# Save the PDF
+pdf_file_path = 'student_marks_analysis_report.pdf'
+pdf.output(pdf_file_path)
+
+# Cleanup: Remove temporary image files
+for file in os.listdir():
+    if file.endswith('.png'):
+        os.remove(file)
+
+print(f"PDF Report Generated: {pdf_file_path}")
