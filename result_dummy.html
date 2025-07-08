@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - Edu-Insight</title>
+  <link rel="stylesheet" href="styleana.css">
+</head>
+<body class="result-body">
+    <nav id="navbar">
+        <ul>
+          
+          <li class="home-li"><a href="index.html" style="font-size: 25px;">Main</a></li>
+          <li><a href="home.html" style="font-size: 25px;">Home</a></li>
+          <li><a href="result.html" style="font-size: 25px;">Result</a></li>
+          <li><a href="analysis.html" style="font-size: 25px;" class="active-link" aria-current="page">Analysis</a></li>
+        </ul>
+      </nav>
+      
+      <div id="overlay" onclick="closeSidebar()" aria-hidden="true"></div>
+    
+      <div class="result-container">
+    <div class="result-content">
+        <h1>Your Results</h1>
+        <p>Select a semester to view your results:</p>
+        <div>
+          <button onclick="viewResult(1)">Semester 1</button>
+          <button onclick="viewResult(2)">Semester 2</button>
+          <button onclick="viewResult(3)">Semester 3</button>
+          <button onclick="viewResult(4)">Semester 4</button>
+          <button onclick="viewResult(5)">Semester 5</button>
+          <button onclick="viewResult(6)">Semester 6</button>
+          <button onclick="viewResult(7)">Semester 7</button>
+          <button onclick="viewResult(8)">Semester 8</button>
+        </div>
+      </div>
+    </div>
+    
+      <script src="scripts.js"></script> 
+  
+</body>
+</html>
